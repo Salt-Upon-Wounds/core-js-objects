@@ -368,33 +368,63 @@ function group(array, keySelector, valueSelector) {
  *  For more examples see unit tests.
  */
 
+class CssElem {
+  constructor(elem, left = '', right = '') {
+    this.left = left;
+    this.right = right;
+    this.elem = elem;
+  }
+
+  stringify() {
+    return this.left.concat(this.elem.concat(this.right));
+  }
+}
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  elems: [],
+  element(value) {
+    this.elems.push(new CssElem(value));
+    return this;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    this.elems.push(new CssElem(value), '#');
+    return this;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    this.elems.push(new CssElem(value), '.');
+    return this;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    this.elems.push(new CssElem(value), '[', ']');
+    return this;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    this.elems.push(new CssElem(value), ':');
+    return this;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    this.elems.push(new CssElem(value), '::');
+    return this;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  stringify() {
+    let res = '';
+    this.elems.forEach((el) => {
+      console.log(el);
+      res += el.stringify();
+      console.log(res);
+    });
+    ele
+    return res;
+  },
+
+  combine(selector1, combinator, selector2) {
+    return [selector1.stringify, selector2.stringify].join(combinator);
   },
 };
 
