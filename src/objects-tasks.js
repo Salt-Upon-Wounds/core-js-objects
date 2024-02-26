@@ -368,63 +368,132 @@ function group(array, keySelector, valueSelector) {
  *  For more examples see unit tests.
  */
 
-class CssElem {
-  constructor(elem, left = '', right = '') {
-    this.left = left;
-    this.right = right;
-    this.elem = elem;
+class CssElemArray {
+  constructor() {
+    this.elems = [];
   }
 
-  stringify() {
-    return this.left.concat(this.elem.concat(this.right));
-  }
-}
+  #priority = -1;
 
-const cssSelectorBuilder = {
-  elems: [],
   element(value) {
-    this.elems.push(new CssElem(value));
+    if (this.#priority > 0)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    if (this.#priority === 0)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    this.#priority = 0;
+    this.elems.push([value]);
     return this;
-  },
+  }
 
   id(value) {
-    this.elems.push(new CssElem(value), '#');
+    if (this.#priority > 1)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    if (this.#priority === 1)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    this.#priority = 1;
+    this.elems.push([value, '#']);
     return this;
-  },
+  }
 
   class(value) {
-    this.elems.push(new CssElem(value), '.');
+    if (this.#priority > 2)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    this.#priority = 2;
+    this.elems.push([value, '.']);
     return this;
-  },
+  }
 
   attr(value) {
-    this.elems.push(new CssElem(value), '[', ']');
+    if (this.#priority > 3)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    this.#priority = 3;
+    this.elems.push([value, '[', ']']);
     return this;
-  },
+  }
 
   pseudoClass(value) {
-    this.elems.push(new CssElem(value), ':');
+    if (this.#priority > 4)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    this.#priority = 4;
+    this.elems.push([value, ':']);
     return this;
-  },
+  }
 
   pseudoElement(value) {
-    this.elems.push(new CssElem(value), '::');
+    if (this.#priority > 5)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    if (this.#priority === 5)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    this.#priority = 5;
+    this.elems.push([value, '::']);
     return this;
-  },
+  }
+
+  combine(value, combinator) {
+    this.elems.push([value, combinator]);
+    return this;
+  }
 
   stringify() {
     let res = '';
     this.elems.forEach((el) => {
-      console.log(el);
-      res += el.stringify();
-      console.log(res);
+      if (el[0] instanceof CssElemArray) {
+        res += ` ${el[1]} `.concat(el[0].stringify());
+      } else {
+        if (el[1]) res += el[1];
+        res += el[0];
+        if (el[2]) res += el[2];
+      }
     });
-    ele
     return res;
+  }
+}
+
+const cssSelectorBuilder = {
+  element(value) {
+    return new CssElemArray().element(value);
+  },
+
+  id(value) {
+    return new CssElemArray().id(value);
+  },
+
+  class(value) {
+    return new CssElemArray().class(value);
+  },
+
+  attr(value) {
+    return new CssElemArray().attr(value);
+  },
+
+  pseudoClass(value) {
+    return new CssElemArray().pseudoClass(value);
+  },
+
+  pseudoElement(value) {
+    return new CssElemArray().pseudoElement(value);
   },
 
   combine(selector1, combinator, selector2) {
-    return [selector1.stringify, selector2.stringify].join(combinator);
+    return selector1.combine(selector2, combinator);
   },
 };
 
